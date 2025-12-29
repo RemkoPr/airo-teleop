@@ -10,7 +10,7 @@ import numpy as np
 ur5 = URrtde(ip_address="10.42.0.162", manipulator_specs=URrtde.UR3E_CONFIG)
 gello_trigger_range=(3.4560587151063498, 2.5327249992622245)  # Set to None if unknown, will prompt for calibration
 USE_JOINT_SPACE = False
-USE_DELTAS = False
+USE_DELTAS = False  # TODO
 CONTROL_ROBOT = True  # If True, will command the UR5 robot & Schunk; if False, will only print the teleop actions
 #=================================================#
 
