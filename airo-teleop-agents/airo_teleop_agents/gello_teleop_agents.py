@@ -1,6 +1,7 @@
 from airo_teleop_agents.teleop_agent import TeleopAgent
+from airo_teleop_devices.gello_teleop_device import GelloTeleopDevice, GelloConfig
 from airo_robots.manipulators.hardware.ur_rtde import URrtde
-from airo_teleop_devices.gello_teleop_device import GelloTeleopDevice
+from airo_robots.grippers.hardware.parallel_position_gripper import ParallelPositionGripper
 from airo_teleop_devices.drivers.dynamixel_robot import DynamixelConfig
 from airo_typing import HomogeneousMatrixType
 from loguru import logger
@@ -11,25 +12,24 @@ import ur_analytic_ik
 
 class Gello4UR_ParallelGripper(TeleopAgent):
     def __init__(self, gello_usb_port: str, 
+                 gello_config: GelloConfig, 
                  ur_robot: URrtde,
-                 gripper_opening_range: tuple[float, float], 
-                 gello_trigger_range: tuple[float, float] | None=None, 
+                 gripper: ParallelPositionGripper, 
                  use_joint_space: bool=True):
         """
-        Docstring for __init__
-        
-        :param self: Description
-        :param config: Details whether to use joint space or Cartesian space, and whether to use delta actions
+        This class implements a teleoperation agent for any combination of Gello teleop device, UR robot, 
+        and parallel gripper (e.g. Robotiq 2F-85 and Schunk EGK40).
         :param gello_usb_port: COM port to which the Gello device is connected
-        :param ur_type: "UR3e" or "UR5e"
-        :param ur_start_joints: Starting joint positions for the UR robot
-        :param gripper_opening_range: Given as (min_opening, max_opening) in meters
-        :param gello_trigger_range: Raw dynamixel positions for fully open and fully closed trigger, e.g., (3.45, 2.53).
+        :param ur_robot: airo_robots.manipulators.hardware.ur_rtde.URrtde object representing the UR robot to be teleoperated
+        :param gripper: airo_robots.grippers.hardware.parallel_position_gripper.ParallelPositionGripper object representing the gripper attached to the UR robot
+        :param gello_config: Configuration for the Gello device
+        :param use_joint_space: Details whether to use joint space or tool space
         """       
         self.gello_usb_port = gello_usb_port
         self.ur_robot = ur_robot
-        self.gripper_opening_range = gripper_opening_range
-        self.gello_trigger_range = gello_trigger_range
+        self.gripper = gripper
+        self.gripper_opening_range = (self.gripper.gripper_specs.min_width, self.gripper.gripper_specs.max_width)
+        self.gello_config = gello_config
         self.use_joint_space = use_joint_space
 
         gello = self._init_gello_device()
@@ -39,21 +39,11 @@ class Gello4UR_ParallelGripper(TeleopAgent):
     def _init_gello_device(self) -> GelloTeleopDevice:
         input("[Gello4UR_ParallelGripper._init_gello_device] Hold gello in similar pose as robot and press Enter to continue...")
         ur_start_joints = self.ur_robot.get_joint_configuration()
-        dynamixel_config = DynamixelConfig(
-            joint_ids=[1, 2, 3, 4, 5, 6, 7],
-            joint_offsets=np.array([40, 16, 25, 40, 15, 16, 0]) * np.pi / 16,
-            joint_signs=[1, 1, -1, 1, 1, 1, 1],
-            start_joints=np.concatenate([ur_start_joints, np.array([None])])  # append dummy for gripper
-        )     
-        gripper_id = 7
-        if self.gello_trigger_range is not None:
-            gello = GelloTeleopDevice(dynamixel_config=dynamixel_config, gripper_config=(gripper_id, self.gello_trigger_range[0], self.gello_trigger_range[1]), 
-                            port=self.gello_usb_port)
-        else:
-            gello = GelloTeleopDevice(dynamixel_config=dynamixel_config, gripper_config=(gripper_id, 0, 0), 
-                            port=self.gello_usb_port)
-            logger.warning("Gello trigger range not provided, calibrating gripper trigger...")
-            gello.calibrate_trigger(gripper_id=gripper_id)
+        self.gello_config.dynamixel_config.start_joints = ur_start_joints
+        gello = GelloTeleopDevice(gello_config=self.gello_config, port=self.gello_usb_port)
+        if self.gello_config.gripper_config is None:
+            logger.warning("Gello gripper config not provided, calibrating gello trigger...")
+            gello.calibrate_trigger()
         return gello
 
     def _build_transform_func(self):
@@ -80,35 +70,3 @@ class Gello4UR_ParallelGripper(TeleopAgent):
                 teleop_action[6] = self.gripper_opening_range[0] + (self.gripper_opening_range[1] - self.gripper_opening_range[0]) * (1 - teleop_action[6])
                 return (ee_pose, teleop_action[6])
         return transform_func
-    
-class Gello4UR3(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str):
-        raise NotImplementedError
-
-class Gello4UR3_Robotiq(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str):
-        raise NotImplementedError
-    
-    
-class Gello4UR3_Schunk(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str):
-        raise NotImplementedError
-    
-class Gello4UR5(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str):
-        raise NotImplementedError
-    
-class Gello4UR5_Robotiq(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str):
-        raise NotImplementedError
-    
-class Gello4UR5_Schunk(Gello4UR_ParallelGripper):
-    def __init__(self, gello_usb_port: str,
-                 ur_robot: URrtde,
-                 gello_trigger_range: tuple[float, float] | None=None, 
-                 use_joint_space: bool=True,):
-        super().__init__(gello_usb_port=gello_usb_port, 
-                         ur_robot=ur_robot,
-                         gripper_opening_range=(0.0, 0.08),  # TODO: draw from Schunk specs in airo_robots
-                         gello_trigger_range=gello_trigger_range,
-                         use_joint_space=use_joint_space)

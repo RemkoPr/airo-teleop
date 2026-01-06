@@ -1,7 +1,8 @@
-from airo_teleop_agents.gello_teleop_agents import Gello4UR5_Schunk
+from airo_teleop_agents.gello_teleop_agents import Gello4UR_ParallelGripper
 import time
 from loguru import logger
 from airo_robots.manipulators.hardware.ur_rtde import URrtde
+from airo_teleop_devices.gello_teleop_device import GelloTeleopDevice, GelloConfig
 import numpy as np
 
 
@@ -15,10 +16,12 @@ CONTROL_ROBOT = True  # If True, will command the UR5 robot & Schunk; if False, 
 
 
 loop_delay = 0.05  # seconds
-teleop_agent = Gello4UR5_Schunk(use_joint_space=USE_JOINT_SPACE,
+teleop_agent = Gello4UR_ParallelGripper(
                 gello_usb_port="/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT792DZ5-if00-port0",
-                gello_trigger_range=gello_trigger_range,
-                ur_robot=ur5)
+                gello_config=GelloTeleopDevice.GELLO1_DEFAULT_CONFIG,
+                ur_robot=ur5,
+                gripper=None,
+                use_joint_space=USE_JOINT_SPACE,)
 if USE_JOINT_SPACE:
     if CONTROL_ROBOT:  # Slowly move to start position
         action = teleop_agent.get_action()

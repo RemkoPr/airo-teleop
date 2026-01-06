@@ -72,13 +72,14 @@ class GelloTeleopDevice(TeleopDevice):
             joint_state[gripper_index] = gripper_pos_mapped
         return joint_state
     
-    def calibrate_trigger(self, gripper_id: int) -> None:
+    def calibrate_trigger(self) -> None:
         """
         Use this function once when integrating a Gello device in your experiment to find the open and 
         close dynamixel positions of the Gello trigger. You can then hardcode these values in the gripper_config
         parameter when initializing the GelloTeleop class.
         :param gripper_id: ID of the dynamixel servo controlling the Gello trigger
         """
+        gripper_id = 7  # Gello trigger is always joint 7
         gripper_idx = list(self.robot._joint_ids).index(gripper_id)
         input("[GelloTeleopDevice.calibrate_trigger] Please release the trigger and press Enter to continue...")
         open_pos = self.robot.get_joint_state()[gripper_idx]
@@ -117,4 +118,6 @@ class GelloTeleopDevice(TeleopDevice):
                     best_offset = offset
             best_offsets.append(best_offset)
         self.dynamixel_config.joint_offsets[:6] = np.array(best_offsets)
+        self.robot.dynamixel_config.joint_offsets = np.array(best_offsets)
+        self.robot.init_joint_offsets()
         logger.info(f"Joint offsets calibrated: {self.dynamixel_config.joint_offsets}")
