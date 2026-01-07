@@ -21,7 +21,10 @@ class Gello4UR(TeleopAgent):
         :param ur_robot: airo_robots.manipulators.hardware.ur_rtde.URrtde object representing the UR robot to be teleoperated
         :param gello_config: Configuration for the Gello device
         :param use_joint_space: Whether to use joint space control or tool space control
-        """       
+        """     
+        if not use_joint_space:
+            logger.warning("You've set use_joint_space=False. For tool space control, this class uses ur-analytic-ik, which as of 01/2026 only uses default DH parameters." \
+            "This may cause inaccuracies, as each UR robot has slightly different parameters.")  
         self.gello_usb_port = gello_usb_port
         self.ur_robot = ur_robot
         self.gello_config = gello_config
