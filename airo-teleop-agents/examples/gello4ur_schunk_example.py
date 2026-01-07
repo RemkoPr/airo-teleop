@@ -17,7 +17,6 @@ schunk = SchunkGripperProcess(usb_interface="/dev/serial/by-path/pci-0000:00:14.
 gello_config = GelloTeleopDevice.GELLO1_DEFAULT_CONFIG
 # gello_config.gripper_config = None  # Uncomment if you want to recalibrate the trigger
 USE_JOINT_SPACE = False
-USE_DELTAS = False  # TODO
 CONTROL_ROBOT = True  # If True, will command the UR5 robot & Schunk; if False, will only print the teleop actions
 #=================================================#
 

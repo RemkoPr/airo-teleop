@@ -14,7 +14,6 @@ ur = URrtde(ip_address="10.42.0.162")
 # a gello: see airo_teleop_devices/test/gello_calibration.py
 gello_config = GelloTeleopDevice.GELLO1_DEFAULT_CONFIG
 USE_JOINT_SPACE = True
-USE_DELTAS = False  # TODO
 CONTROL_ROBOT = True  # If True, will command the UR robot; if False, will only print the teleop actions
 #=================================================#
 
