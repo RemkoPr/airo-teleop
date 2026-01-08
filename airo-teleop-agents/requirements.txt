@@ -3,3 +3,4 @@ loguru
 ur_analytic_ik
 airo_typing
 airo_robots
+scipy

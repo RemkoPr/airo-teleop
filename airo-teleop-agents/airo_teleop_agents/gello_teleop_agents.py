@@ -6,6 +6,7 @@ from airo_typing import HomogeneousMatrixType
 from loguru import logger
 import numpy.typing as npt
 import numpy as np
+from typing import Callable
 import ur_analytic_ik
 
 
@@ -18,7 +19,7 @@ class Gello4UR(TeleopAgent):
         This class implements a teleoperation agent for any combination of Gello teleop device, UR robot, 
         and parallel gripper (e.g. Robotiq 2F-85 and Schunk EGK40).
         :param gello_usb_port: COM port to which the Gello device is connected
-        :param ur_robot: airo_robots.manipulators.hardware.ur_rtde.URrtde object representing the UR robot to be teleoperated
+        :param ur_robot: airo_robots URrtde object representing the UR robot to be teleoperated
         :param gello_config: Configuration for the Gello device
         :param use_joint_space: Whether to use joint space control or tool space control
         """     
@@ -41,7 +42,7 @@ class Gello4UR(TeleopAgent):
         gello = GelloTeleopDevice(gello_config=self.gello_config, port=self.gello_usb_port)
         return gello
 
-    def _build_transform_func(self):
+    def _build_transform_func(self) -> Callable:
         if self.use_joint_space:
             # Joint mapping should already be set up by the dynamixel_config
             def transform_func(raw_data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]: # type: ignore
@@ -55,7 +56,7 @@ class Gello4UR(TeleopAgent):
             }
             ur_type = self.ur_robot.model
             fk_function = forward_kinematics_dict[ur_type]
-            def transform_func(raw_data: npt.NDArray[np.float64]) -> tuple[HomogeneousMatrixType, float]:
+            def transform_func(raw_data: npt.NDArray[np.float64]) -> HomogeneousMatrixType:
                 teleop_action = raw_data.copy()
                 joint_positions = teleop_action[:6]
                 ee_pose = fk_function(*joint_positions)
@@ -73,8 +74,8 @@ class Gello4UR_ParallelGripper(Gello4UR):
         This class implements a teleoperation agent for any combination of Gello teleop device, UR robot, 
         and parallel gripper (e.g. Robotiq 2F-85 and Schunk EGK40).
         :param gello_usb_port: COM port to which the Gello device is connected
-        :param ur_robot: airo_robots.manipulators.hardware.ur_rtde.URrtde object representing the UR robot to be teleoperated
-        :param gripper: airo_robots.grippers.hardware.parallel_position_gripper.ParallelPositionGripper object representing the gripper attached to the UR robot
+        :param ur_robot: airo_robots URrtde object representing the UR robot to be teleoperated
+        :param gripper: airo_robots ParallelPositionGripper object representing the gripper attached to the UR robot
         :param gello_config: Configuration for the Gello device
         :param use_joint_space: Whether to use joint space control or tool space control
         """       
