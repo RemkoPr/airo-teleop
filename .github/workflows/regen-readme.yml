@@ -1,0 +1,38 @@
+name: Regenerate README
+
+on:
+  push:
+    paths:
+      - 'airo-teleop-agents/**'
+      - 'airo-teleop-devices/**'
+      - 'scripts/generate_readme.py'
+  pull_request:
+    paths:
+      - 'airo-teleop-agents/**'
+      - 'airo-teleop-devices/**'
+      - 'scripts/generate_readme.py'
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Generate README
+        run: python scripts/generate_readme.py
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'docs: regenerate root README'
+          file_pattern: README.md
+          commit_user_name: github-actions
+          commit_user_email: github-actions@github.com
